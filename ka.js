@@ -8,7 +8,7 @@ if (!BAS_URL || !LOGIN_USERNAME || !LOGIN_PASSWORD) {
     console.error("错误: BAS_URL, BAS_USERNAME, 或 BAS_PASSWORD 环境变量未设置!");
     process.exit(1);
 }
-console.log(`[${(new Date).toLocaleTimeString()}] 目标 URL: ${BAS_URL}`);
+//console.log(`[${(new Date).toLocaleTimeString()}] 目标 URL: ${BAS_URL}`);
 const SCREENSHOT_WAIT_TIME = 1e4;
 const INITIAL_WAIT_TIME = 2 * 60 * 1e3;
 const SCREENSHOT_DIR = path.resolve(__dirname, "status_screenshot");
@@ -26,7 +26,7 @@ async function ensureLoggedIn(page) {
             await page.type(SELECTOR_USERNAME, LOGIN_USERNAME, {
                 delay: 100
             });
-            console.log(`[${(new Date).toLocaleTimeString()}] 点击“继续”按钮...`);
+            console.log(`[${(new Date).toLocaleTimeString()}] 点击“继续”...`);
             await Promise.all([ page.waitForSelector(SELECTOR_PASSWORD, {
                 timeout: 1e4
             }).catch(() => null), page.click(SELECTOR_SUBMIT_BUTTON) ]);
