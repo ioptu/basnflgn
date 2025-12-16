@@ -44,6 +44,7 @@ jobs:
        
       - name: Delete old workflow runs
         uses: MajorScruffy/delete-old-workflow-runs@v0.3.0
+        if: always()
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
