@@ -17,15 +17,15 @@ jobs:
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
     steps:
-      - name: ⬇️ 检出代码 (Checkout repository)
+      - name: ⬇️ 检出代码 
         uses: actions/checkout@v4
-      - name: 🛠️ 设置 Node.js 环境 (Set up Node.js)
+      - name: 🛠️ 设置 Node.js 环境 
         uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: ⚙️ 安装 Puppeteer 依赖
         run: npm install
-      - name: 💻 运行 BAS 启动脚本 (Run keepAlive.js)
+      - name: 💻 运行 BAS 启动脚本 
         run: node ka.js
         env:
           BAS_URL: ${{ secrets.BAS_URL }}
