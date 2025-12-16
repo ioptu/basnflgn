@@ -11,6 +11,9 @@ on:
 jobs:
   run_bas_startup:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
     timeout-minutes: 15
     env:
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
