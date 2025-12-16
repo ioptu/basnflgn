@@ -1,0 +1,44 @@
+name: baslgn 
+
+on:
+  # 1. 每日定时运行 (使用 CRON 表达式定义运行时间，此处示例为每天 UTC 时间 02:00 运行)
+  #schedule:
+    # 推荐根据您的 BAS 工作区所在地时区调整此时间
+    #- cron: '0 2 * * *'
+  
+  # 2. 允许在 GitHub UI 上手动触发此工作流
+  workflow_dispatch:
+    
+jobs:
+  run_bas_startup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
+    steps:
+      - name: ⬇️ 检出代码 (Checkout repository)
+        uses: actions/checkout@v4
+      - name: 🛠️ 设置 Node.js 环境 (Set up Node.js)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: ⚙️ 安装 Puppeteer 依赖
+        run: npm install
+      - name: 💻 运行 BAS 启动脚本 (Run keepAlive.js)
+        run: node ka.js
+        env:
+          BAS_URL: ${{ secrets.BAS_URL }}
+          BAS_USERNAME: ${{ secrets.BAS_USERNAME }}
+          BAS_PASSWORD: ${{ secrets.BAS_PASSWORD }}
+          
+      - name: 📂 检查截图文件是否存在
+        run: ls -l status_screenshot/latest_bas_status.png
+      - name: 📤 上传截图作为 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bas-status-screenshot
+          path: status_screenshot/latest_bas_status.png
+          retention-days: 7 
+      - name: ✅ 工作流完成
+        run: echo "BAS 自动化初始化流程完成，截图已上传到 Artifacts，并保留 7 天。"
