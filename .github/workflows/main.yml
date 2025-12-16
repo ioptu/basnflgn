@@ -42,6 +42,14 @@ jobs:
      # - name: ✅ 工作流完成
        # run: echo "BAS 自动化初始化流程完成，截图已上传到 Artifacts，并保留 7 天。"
        
+      - name: Delete old workflow runs
+        uses: MajorScruffy/delete-old-workflow-runs@v0.3.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          repository: ${{ github.repository }}
+          older-than-seconds: 3600  
+       
   keepalive-workflow:
     name: Keepalive Workflow
     if: ${{ always() }}
