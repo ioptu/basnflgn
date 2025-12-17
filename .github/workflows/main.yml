@@ -36,12 +36,12 @@ jobs:
           
       #- name: 📂 检查截图文件是否存在
         #run: ls -l status_screenshot/latest_bas_status.png
-      #- name: 📤 上传截图作为 Artifacts
-        #uses: actions/upload-artifact@v4
-        #with:
-          #name: bas-status-screenshot
-          #path: status_screenshot/latest_bas_status.png
-          #retention-days: 7 
+      - name: 📤 上传截图作为 Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bas-status-screenshot
+          path: status_screenshot/latest_bas_status.png
+          retention-days: 7 
      # - name: ✅ 工作流完成
        # run: echo "BAS 自动化初始化流程完成，截图已上传到 Artifacts，并保留 7 天。"
        
