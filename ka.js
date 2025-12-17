@@ -11,8 +11,6 @@ if (!BAS_URL || !LOGIN_USERNAME || !LOGIN_PASSWORD) {
     process.exit(1);
 }
 
-const SCREENSHOT_WAIT_TIME = 1e4;
-const INITIAL_WAIT_TIME = 3 * 60 * 1e3; 
 const SCREENSHOT_DIR = path.resolve(__dirname, "status_screenshot");
 const SELECTOR_USERNAME = "#j_username";
 const SELECTOR_SUBMIT_BUTTON = "#logOnFormSubmit";
@@ -55,17 +53,20 @@ async function handleDisclaimerPage(page) {
 
 async function runAutomation() {
     let browser;
+    let waitTime = 1 * 60 * 1e3; 
+    
     try {
         if (!fs.existsSync(SCREENSHOT_DIR)) fs.mkdirSync(SCREENSHOT_DIR);
         browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"], headless: true });
         const page = (await browser.pages())[0] || await browser.newPage();
         
-        console.log(`[${(new Date).toLocaleTimeString()}] 正在访问 BAS...`);
+        console.log(`[${(new Date).toLocaleTimeString()}] 访问 BAS...`);
         await page.goto(BAS_URL, { waitUntil: "networkidle0" });
         
         await ensureLoggedIn(page);
         await handleDisclaimerPage(page);
 
+       
         try {
             const frameHandle = await page.waitForSelector('iframe#loading-ui', { timeout: 8e3 }).catch(() => null);
             if (frameHandle) {
@@ -78,18 +79,20 @@ async function runAutomation() {
 
                 if (startBtn) {
                     await startBtn.click();
-                    console.log(`[${(new Date).toLocaleTimeString()}] 检测到停止状态，已点击 Start。`);
+                    console.log(`[${(new Date).toLocaleTimeString()}] 检测到停止状态，已点击 Start。切换为 5 分钟长等待...`);
+                    
+                    waitTime = 5 * 60 * 1e3; 
                 }
             }
         } catch (e) {
-            console.log("未发现启动按钮，可能已在运行。");
+            console.log("未发现启动按钮，可能已在运行。使用 1 分钟短等待。");
         }
 
-        console.log(`[${(new Date).toLocaleTimeString()}] 等待中 (${INITIAL_WAIT_TIME / 6e4}min)...`);
-        await new Promise(resolve => setTimeout(resolve, INITIAL_WAIT_TIME));
+        console.log(`[${(new Date).toLocaleTimeString()}] 最终等待中 (${waitTime / 6e4} min)...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
 
         await page.screenshot({ path: path.join(SCREENSHOT_DIR, "latest_bas_status.png"), fullPage: true });
-        console.log(`[${(new Date).toLocaleTimeString()}] 流程结束，截图已保存。`);
+        console.log(`[${(new Date).toLocaleTimeString()}] 流程结束。`);
     } catch (e) {
         console.error(`致命错误: ${e.message}`);
     } finally {
