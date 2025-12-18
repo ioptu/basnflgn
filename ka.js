@@ -45,7 +45,7 @@ async function handleDisclaimerPage(page) {
         const okButton = await page.waitForSelector(SELECTOR_DISCLAIMER_BUTTON, { timeout: 5e3 }).catch(() => null);
         if (okButton) {
             await okButton.click();
-            console.log(`[${(new Date).toLocaleTimeString()}] 已点击说明页 OK。`);
+            console.log(`[${(new Date).toLocaleTimeString()}] 已点击说明页。`);
             await new Promise(resolve => setTimeout(resolve, 2e3));
         }
     } catch (e) {}
