@@ -1,13 +1,10 @@
 name: baslgn 
 
 on:
-  #schedule:
-    # 推荐根据您的 BAS 工作区所在地时区调整此时间
-    #- cron: '49 * * * *'
-  
-  # 2. 允许在 GitHub UI 上手动触发此工作流
+  # schedule:
+  #   - cron: '49 * * * *'
   workflow_dispatch:
-    
+
 jobs:
   run_bas_startup:
     runs-on: ubuntu-latest
@@ -15,45 +12,57 @@ jobs:
       actions: write
       contents: read
     timeout-minutes: 15
+    
+    strategy:
+      fail-fast: false 
+      matrix:
+        account: [
+          { name: "Account_1", url_secret: "BAS_URL_1", user_secret: "BAS_USERNAME_1", pass_secret: "BAS_PASSWORD_1" },
+          { name: "Account_2", url_secret: "BAS_URL_2", user_secret: "BAS_USERNAME_2", pass_secret: "BAS_PASSWORD_2" }
+        ]
+
+    name: Run for ${{ matrix.account.name }}
     env:
       PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
+
     steps:
       - name: ⬇️ 检出代码 
         uses: actions/checkout@v5
+
       - name: 🛠️ 设置 Node.js 环境 
         uses: actions/setup-node@v6
         with:
-          node-version: '24'
+          node-version: '24' 
+
       - name: ⚙️ 安装 Puppeteer 依赖
         run: npm install
+
       - name: 💻 运行 BAS 启动脚本 
         run: node ka.js
         env:
-          BAS_URL: ${{ secrets.BAS_URL }}
-          BAS_USERNAME: ${{ secrets.BAS_USERNAME }}
-          BAS_PASSWORD: ${{ secrets.BAS_PASSWORD }}
-          
-      #- name: 📂 检查截图文件是否存在
-        #run: ls -l status_screenshot/latest_bas_status.png
-      #- name: 📤 上传截图作为 Artifacts
-        #uses: actions/upload-artifact@v4
-        #with:
-          #name: bas-status-screenshot
-          #path: status_screenshot/latest_bas_status.png
-          #retention-days: 7 
-     # - name: ✅ 工作流完成
-       # run: echo "BAS 自动化初始化流程完成，截图已上传到 Artifacts，并保留 7 天。"
-       
+          BAS_URL: ${{ secrets[matrix.account.url_secret] }}
+          BAS_USERNAME: ${{ secrets[matrix.account.user_secret] }}
+          BAS_PASSWORD: ${{ secrets[matrix.account.pass_secret] }}
+
+      - name: 📤 上传截图作为 Artifacts
+        if: always() 
+        uses: actions/upload-artifact@v4
+        with:
+          name: bas-status-screenshot-${{ matrix.account.name }}
+          path: status_screenshot/latest_bas_status.png
+          retention-days: 7         
+
       - name: Delete old workflow runs
+        # 仅由第一个 Job 执行，防止并发冲突
+        if: always() && strategy.job-index == 0
         uses: MajorScruffy/delete-old-workflow-runs@v0.3.0
-        if: always()
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           repository: ${{ github.repository }}
           older-than-seconds: 3600  
-       
+
   keepalive-workflow:
     name: Keepalive Workflow
     if: ${{ always() }}
