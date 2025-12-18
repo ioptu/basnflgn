@@ -55,7 +55,7 @@ jobs:
          # retention-days: 7         
 
       - name: Delete old workflow runs
-        # 仅由第一个 Job 执行，防止并发冲突
+        # 仅由第一个 Job执行，防止并发冲突
         if: always() && strategy.job-index == 0
         uses: MajorScruffy/delete-old-workflow-runs@v0.3.0
         env:
