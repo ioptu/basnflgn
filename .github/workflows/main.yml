@@ -3,7 +3,7 @@ name: baslgn
 on:
   schedule:
      - cron: '49 * * * *'
-     
+
   workflow_dispatch:
 
 jobs:
