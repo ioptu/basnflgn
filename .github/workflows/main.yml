@@ -1,9 +1,9 @@
 name: baslgn 
 
 on:
-  schedule:
+  #schedule:
     # 推荐根据您的 BAS 工作区所在地时区调整此时间
-    - cron: '49 * * * *'
+    #- cron: '49 * * * *'
   
   # 2. 允许在 GitHub UI 上手动触发此工作流
   workflow_dispatch:
