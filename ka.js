@@ -16,6 +16,7 @@ const SELECTOR_USERNAME = "#j_username";
 const SELECTOR_SUBMIT_BUTTON = "#logOnFormSubmit";
 const SELECTOR_PASSWORD = "#j_password";
 const SELECTOR_DISCLAIMER_BUTTON = "#confirm-notification-btn";
+const SELECTOR_THEIA_MAIN = "iframe#theia-main";
 
 async function ensureLoggedIn(page) {
     try {
@@ -45,7 +46,7 @@ async function handleDisclaimerPage(page) {
         const okButton = await page.waitForSelector(SELECTOR_DISCLAIMER_BUTTON, { timeout: 5e3 }).catch(() => null);
         if (okButton) {
             await okButton.click();
-            console.log(`[${(new Date).toLocaleTimeString()}] 已点击说明页。`);
+            console.log(`[${(new Date).toLocaleTimeString()}] 已点击说明页 OK。`);
             await new Promise(resolve => setTimeout(resolve, 2e3));
         }
     } catch (e) {}
@@ -53,20 +54,20 @@ async function handleDisclaimerPage(page) {
 
 async function runAutomation() {
     let browser;
-    let waitTime = 1 * 60 * 1e3; 
+    let isColdStart = false;
     
     try {
         if (!fs.existsSync(SCREENSHOT_DIR)) fs.mkdirSync(SCREENSHOT_DIR);
         browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"], headless: true });
         const page = (await browser.pages())[0] || await browser.newPage();
         
-        console.log(`[${(new Date).toLocaleTimeString()}] 访问 BAS...`);
+        console.log(`[${(new Date).toLocaleTimeString()}] 正在访问 BAS 主页...`);
         await page.goto(BAS_URL, { waitUntil: "networkidle0" });
         
         await ensureLoggedIn(page);
         await handleDisclaimerPage(page);
 
-       
+
         try {
             const frameHandle = await page.waitForSelector('iframe#loading-ui', { timeout: 8e3 }).catch(() => null);
             if (frameHandle) {
@@ -79,20 +80,31 @@ async function runAutomation() {
 
                 if (startBtn) {
                     await startBtn.click();
-                    console.log(`[${(new Date).toLocaleTimeString()}] 检测到停止状态，已点击 Start。切换为 5 分钟长等待...`);
-                    
-                    waitTime = 5 * 60 * 1e3; 
+                    console.log(`[${(new Date).toLocaleTimeString()}] 检测到停止状态，已点击 Start。`);
+                    isColdStart = true;
                 }
             }
-        } catch (e) {
-            console.log("未发现启动按钮，可能已在运行。使用 1 分钟短等待。");
+        } catch (e) { console.log("未发现启动按钮。"); }
+
+ 
+        // 如果是冷启动，最多等 10 分钟；如果是热启动，最多等 2 分钟
+        const waitTimeout = isColdStart ? 10 * 60 * 1e3 : 2 * 60 * 1e3;
+        console.log(`[${(new Date).toLocaleTimeString()}] 等待页面加载...`);
+        
+        const theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { 
+            visible: true, 
+            timeout: waitTimeout 
+        }).catch(() => null);
+
+        if (theiaFrame) {
+            console.log(`[${(new Date).toLocaleTimeString()}] 页面已就绪！额外等待 10 秒确保渲染完成...`);
+            await new Promise(resolve => setTimeout(resolve, 1e4));
+        } else {
+            console.warn(`[${(new Date).toLocaleTimeString()}] 警告：在预定时间内未打开页面，将直接尝试截图。`);
         }
 
-        console.log(`[${(new Date).toLocaleTimeString()}] 最终等待中 (${waitTime / 6e4} min)...`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-
         await page.screenshot({ path: path.join(SCREENSHOT_DIR, "latest_bas_status.png"), fullPage: true });
-        console.log(`[${(new Date).toLocaleTimeString()}] 流程结束。`);
+        console.log(`[${(new Date).toLocaleTimeString()}] 任务完成。`);
     } catch (e) {
         console.error(`致命错误: ${e.message}`);
     } finally {
