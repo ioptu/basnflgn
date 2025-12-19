@@ -2,7 +2,7 @@ name: baslgn
 
 on:
   schedule:
-     - cron: '49 * * * *'
+     - cron: '56 * * * *'
 
   workflow_dispatch:
 
