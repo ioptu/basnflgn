@@ -20,12 +20,12 @@ const SELECTOR_THEIA_MAIN = "iframe#theia-main";
 
 async function ensureLoggedIn(page) {
     try {
-        let usernameInput = await page.waitForSelector(SELECTOR_USERNAME, { timeout: 3e3 }).catch(() => null);
+        let usernameInput = await page.waitForSelector(SELECTOR_USERNAME, { timeout: 5000 }).catch(() => null);
         if (usernameInput) {
             console.log(`[${(new Date).toLocaleTimeString()}] 执行登录...`);
             await page.type(SELECTOR_USERNAME, LOGIN_USERNAME, { delay: 100 });
             await Promise.all([ 
-                page.waitForSelector(SELECTOR_PASSWORD, { timeout: 1e4 }).catch(() => null), 
+                page.waitForSelector(SELECTOR_PASSWORD, { timeout: 15000 }).catch(() => null), 
                 page.click(SELECTOR_SUBMIT_BUTTON) 
             ]);
             let passwordInput = await page.$(SELECTOR_PASSWORD);
@@ -43,74 +43,83 @@ async function ensureLoggedIn(page) {
 
 async function handleDisclaimerPage(page) {
     try {
-        const okButton = await page.waitForSelector(SELECTOR_DISCLAIMER_BUTTON, { timeout: 5e3 }).catch(() => null);
+        const okButton = await page.waitForSelector(SELECTOR_DISCLAIMER_BUTTON, { timeout: 8000 }).catch(() => null);
         if (okButton) {
             await okButton.click();
             console.log(`[${(new Date).toLocaleTimeString()}] 已点击说明页 OK。`);
-            await new Promise(resolve => setTimeout(resolve, 2e3));
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
     } catch (e) {}
 }
 
 async function runAutomation() {
     let browser;
-    let isColdStart = false;
-    
     try {
         if (!fs.existsSync(SCREENSHOT_DIR)) fs.mkdirSync(SCREENSHOT_DIR);
         browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"], headless: true });
         const page = (await browser.pages())[0] || await browser.newPage();
-        page.setDefaultTimeout(600000); // 修改全局超时10分钟 
         
+        
+        //page.setDefaultTimeout(900000); 
+
         console.log(`[${(new Date).toLocaleTimeString()}] 正在访问 BAS 主页...`);
         await page.goto(BAS_URL, { waitUntil: "networkidle0" });
         
         await ensureLoggedIn(page);
         await handleDisclaimerPage(page);
 
-
+        
         try {
-            const frameHandle = await page.waitForSelector('iframe#loading-ui', { timeout: 8e3 }).catch(() => null);
+            const frameHandle = await page.waitForSelector('iframe#loading-ui', { timeout: 30000 }).catch(() => null);
             if (frameHandle) {
                 const frame = await frameHandle.contentFrame();
-                const startBtn = await frame.waitForSelector('#bDelete', { timeout: 5e3 }).catch(async () => {
-                    return await frame.evaluateHandle(() => {
-                        return Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Start'));
-                    });
-                });
-
+                const startBtn = await frame.waitForSelector('#bDelete', { timeout: 10000 }).catch(() => null);
                 if (startBtn) {
                     await startBtn.click();
                     console.log(`[${(new Date).toLocaleTimeString()}] 检测到停止状态，已点击 Start。`);
-                    isColdStart = true;
                 }
             }
         } catch (e) { console.log("未发现启动按钮。"); }
 
- 
-        // 最多等 15 分钟
-        //const maxTtimeout = 15 * 60 * 1e3;
-        console.log(`[${(new Date).toLocaleTimeString()}] 等待页面加载...`);
+        // --- 循环重试检测逻辑 ---
+        console.log(`[${(new Date).toLocaleTimeString()}] 开始检测页面加载状态...`);
         
-        const theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { 
-            visible: true, 
-            timeout: 900000 
-        }).catch(() => null);
+        let theiaFrame = null;
+        const RETRY_LIMIT = 3; // 最多 3 轮循环
+        const TWO_MINUTES = 2 * 60 * 1000; // 每轮等待 2 分钟
 
-        if (theiaFrame) {
-            console.log(`[${(new Date).toLocaleTimeString()}] 页面已就绪！额外等待 10 秒确保渲染完成...`);
-            await new Promise(resolve => setTimeout(resolve, 1e4));
-        } else {
-            console.warn(`[${(new Date).toLocaleTimeString()}] ⚠️警告：在预定时间内未打开页面，将直接尝试截图。`);
+        // 先进行初始检测 (默认等 2 分钟)
+        theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { visible: true, timeout: TWO_MINUTES }).catch(() => null);
+
+        // 如果第一轮没等到，进入循环
+        for (let i = 1; i <= RETRY_LIMIT && !theiaFrame; i++) {
+            console.warn(`[${(new Date).toLocaleTimeString()}] 第 ${i} 次检测：未发现页面，继续等待 2 分钟...`);
+            
+            // 每次等待前可以做一点点交互（比如刷新/滚动）防止连接彻底死掉
+            await page.evaluate(() => window.scrollBy(0, 1)); 
+            
+            theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { visible: true, timeout: TWO_MINUTES }).catch(() => null);
         }
 
-        await page.screenshot({ path: path.join(SCREENSHOT_DIR, "latest_bas_status.png"), fullPage: true });
-        console.log(`[${(new Date).toLocaleTimeString()}] 任务完成。`);
+        // --- 最终判定结果 ---
+        if (theiaFrame) {
+            console.log(`[${(new Date).toLocaleTimeString()}] ✅ 页面已就绪！最后等待 10 秒确保加载完毕。`);
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            await page.screenshot({ path: path.join(SCREENSHOT_DIR, "latest_bas_status.png"), fullPage: true });
+            console.log(`[${(new Date).toLocaleTimeString()}] 任务圆满完成。`);
+        } else {
+            console.error(`[${(new Date).toLocaleTimeString()}] ❌ 报错：经过多轮循环（共计约 8-9 分钟）仍未打开页面。`);
+            await page.screenshot({ path: path.join(SCREENSHOT_DIR, "latest_bas_status.png"), fullPage: true });
+            // 主动报错，让 GitHub Actions 显示失败
+            throw new Error("PAGE_LOAD_TIMEOUT: 多轮尝试后依然无法进入");
+        }
+
     } catch (e) {
-        console.error(`致命错误: ${e.message}`);
+        console.error(`[${(new Date).toLocaleTimeString()}] 致命错误: ${e.message}`);
+        process.exit(1);
     } finally {
         if (browser) await browser.close();
     }
 }
 
-runAutomation().catch(() => process.exit(1));
+runAutomation();
