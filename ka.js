@@ -87,8 +87,8 @@ async function runAutomation() {
         } catch (e) { console.log("未发现启动按钮。"); }
 
  
-        // 如果是冷启动，最多等 10 分钟；如果是热启动，最多等 5 分钟
-        const waitTimeout = isColdStart ? 10 * 60 * 1e3 : 5 * 60 * 1e3;
+        // 最多等 10 分钟
+        const waitTimeout = 10 * 60 * 1e3;
         console.log(`[${(new Date).toLocaleTimeString()}] 等待页面加载...`);
         
         const theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { 
@@ -100,7 +100,7 @@ async function runAutomation() {
             console.log(`[${(new Date).toLocaleTimeString()}] 页面已就绪！额外等待 10 秒确保渲染完成...`);
             await new Promise(resolve => setTimeout(resolve, 1e4));
         } else {
-            console.warn(`[${(new Date).toLocaleTimeString()}] 警告：在预定时间内未打开页面，将直接尝试截图。`);
+            console.warn(`[${(new Date).toLocaleTimeString()}] ⚠️警告：在预定时间内未打开页面，将直接尝试截图。`);
         }
 
         await page.screenshot({ path: path.join(SCREENSHOT_DIR, "latest_bas_status.png"), fullPage: true });
