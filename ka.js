@@ -87,8 +87,8 @@ async function runAutomation() {
         } catch (e) { console.log("未发现启动按钮。"); }
 
  
-        // 如果是冷启动，最多等 10 分钟；如果是热启动，最多等 2 分钟
-        const waitTimeout = isColdStart ? 10 * 60 * 1e3 : 2 * 60 * 1e3;
+        // 如果是冷启动，最多等 10 分钟；如果是热启动，最多等 5 分钟
+        const waitTimeout = isColdStart ? 10 * 60 * 1e3 : 5 * 60 * 1e3;
         console.log(`[${(new Date).toLocaleTimeString()}] 等待页面加载...`);
         
         const theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { 
