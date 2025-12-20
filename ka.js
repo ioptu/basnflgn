@@ -60,7 +60,7 @@ async function runAutomation() {
         const page = (await browser.pages())[0] || await browser.newPage();
         
         
-        //page.setDefaultTimeout(900000); 
+        
 
         console.log(`[${(new Date).toLocaleTimeString()}] 正在访问 BAS 主页...`);
         await page.goto(BAS_URL, { waitUntil: "networkidle0" });
@@ -81,27 +81,27 @@ async function runAutomation() {
             }
         } catch (e) { console.log("未发现启动按钮。"); }
 
-        // --- 循环重试检测逻辑 ---
+        
         console.log(`[${(new Date).toLocaleTimeString()}] 开始检测页面加载状态...`);
         
         let theiaFrame = null;
-        const RETRY_LIMIT = 6; // 最多 6 轮循环
-        const TWO_MINUTES = 1 * 60 * 1000; // 每轮等待 1 分钟
+        const RETRY_LIMIT = 6; 
+        const TIME_MINUTES = 1 * 60 * 1000; 
 
-        // 先进行初始检测 (默认等 1 分钟)
-        theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { visible: true, timeout: TWO_MINUTES }).catch(() => null);
+        
+        theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { visible: true, timeout: TIME_MINUTES }).catch(() => null);
 
-        // 如果第一轮没等到，进入循环
+        
         for (let i = 1; i <= RETRY_LIMIT && !theiaFrame; i++) {
-            console.warn(`[${(new Date).toLocaleTimeString()}] 第 ${i} 次检测：未发现页面，继续等待 1 分钟...`);
+            console.warn(`[${(new Date).toLocaleTimeString()}] 第 ${i} 次检测：未发现页面，继续等待 ${TIME_MINUTES / 60000} 分钟...`);
             
-            // 每次等待前可以做一点点交互（比如刷新/滚动）防止连接彻底死掉
+            
             await page.evaluate(() => window.scrollBy(0, 1)); 
             
-            theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { visible: true, timeout: TWO_MINUTES }).catch(() => null);
+            theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { visible: true, timeout: TIME_MINUTES }).catch(() => null);
         }
 
-        // --- 最终判定结果 ---
+        
         if (theiaFrame) {
             console.log(`[${(new Date).toLocaleTimeString()}] ✅ 页面已就绪！最后等待 10 秒确保加载完毕。`);
             await new Promise(resolve => setTimeout(resolve, 10000));
@@ -110,7 +110,7 @@ async function runAutomation() {
         } else {
             console.error(`[${(new Date).toLocaleTimeString()}] ❌ 报错：经过多轮循环（共计约 8-9 分钟）仍未打开页面。`);
             await page.screenshot({ path: path.join(SCREENSHOT_DIR, "latest_bas_status.png"), fullPage: true });
-            // 主动报错，让 GitHub Actions 显示失败
+            
             throw new Error("PAGE_LOAD_TIMEOUT: 多轮尝试后依然无法打开目标页面");
         }
 
