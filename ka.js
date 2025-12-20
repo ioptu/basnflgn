@@ -60,6 +60,7 @@ async function runAutomation() {
         if (!fs.existsSync(SCREENSHOT_DIR)) fs.mkdirSync(SCREENSHOT_DIR);
         browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"], headless: true });
         const page = (await browser.pages())[0] || await browser.newPage();
+        page.setDefaultTimeout(600000); // 修改全局超时10分钟 
         
         console.log(`[${(new Date).toLocaleTimeString()}] 正在访问 BAS 主页...`);
         await page.goto(BAS_URL, { waitUntil: "networkidle0" });
@@ -87,13 +88,13 @@ async function runAutomation() {
         } catch (e) { console.log("未发现启动按钮。"); }
 
  
-        // 最多等 10 分钟
-        const waitTtimeout = 10 * 60 * 1e3;
+        // 最多等 15 分钟
+        const maxTtimeout = 15 * 60 * 1e3;
         console.log(`[${(new Date).toLocaleTimeString()}] 等待页面加载...`);
         
         const theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { 
             visible: true, 
-            timeout: waitTtimeout 
+            timeout: maxTtimeout 
         }).catch(() => null);
 
         if (theiaFrame) {
