@@ -2,8 +2,10 @@ name: baslgn
 
 on:
   schedule:
-     - cron: '56 * * * *'
-
+    # 1. 对应北京时间 03:56 - 07:56 (UTC 19:56 - 23:56)
+    - cron: '56 19-23 * * *'
+    # 2. 对应北京时间 08:56 - 21:56 (UTC 00:56 - 13:56)
+    - cron: '56 0-13 * * *'
   workflow_dispatch:
 
 jobs:
