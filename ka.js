@@ -89,12 +89,12 @@ async function runAutomation() {
 
  
         // 最多等 15 分钟
-        const maxTtimeout = 15 * 60 * 1e3;
+        //const maxTtimeout = 15 * 60 * 1e3;
         console.log(`[${(new Date).toLocaleTimeString()}] 等待页面加载...`);
         
         const theiaFrame = await page.waitForSelector(SELECTOR_THEIA_MAIN, { 
             visible: true, 
-            timeout: maxTtimeout 
+            timeout: 900000 
         }).catch(() => null);
 
         if (theiaFrame) {
