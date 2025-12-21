@@ -24,7 +24,7 @@ jobs:
       actions: write
       contents: read
       
-    # 增加 Job 级别超时。因为有 3 次尝试（每次15min）+ 2次等待（每次5min），总共可能耗时 55 分钟。
+    # Job 级别超时
     timeout-minutes: 60 
 
     strategy:
@@ -61,7 +61,7 @@ jobs:
           # 包含首次运行在内的最大尝试次数
           max_attempts: 3
           # 失败后等待的时间 秒
-          retry_wait_seconds: 60
+          retry_wait_seconds: 20
           # 要执行的命令
           command: node ka.js
         env:
