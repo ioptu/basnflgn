@@ -1,4 +1,4 @@
-name: baslgn 
+name: baslgn
 
 on:
   schedule:
@@ -6,17 +6,27 @@ on:
     - cron: '56 19-23 * * *'
     # 2. 对应北京时间 08:56 - 21:56 (UTC 00:56 - 13:56)
     - cron: '56 0-13 * * *'
+    # 额外补充的 00:07 触发
     - cron: '07 0 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # 允许手动点击运行
 
 jobs:
   run_bas_startup:
     runs-on: ubuntu-latest
+    
+    # --- 并发控制：确保同一个账号同一时间只有一个任务在跑 ---
+    # 如果上一次运行还在重试，而新的一次运行开始了，它会取消（Cancel）旧的，开启新的。
+    concurrency:
+      group: bas-lock-${{ matrix.account.name }}
+      cancel-in-progress: true
+
     permissions:
       actions: write
       contents: read
-    timeout-minutes: 15
-    
+      
+    # 增加 Job 级别超时。因为有 3 次尝试（每次15min）+ 2次等待（每次5min），总共可能耗时 55 分钟。
+    timeout-minutes: 60 
+
     strategy:
       fail-fast: false 
       matrix:
@@ -42,23 +52,25 @@ jobs:
       - name: ⚙️ 安装 Puppeteer 依赖
         run: npm install
 
-      - name: 💻 运行 BAS 启动脚本 
-        run: node ka.js
+      - name: 💻 运行 BAS 启动脚本 (失败后等 5 分钟重试)
+        # 使用 retry 插件实现循环逻辑
+        uses: nick-fields/retry@v3
+        with:
+          # 单次脚本最大执行时间
+          timeout_minutes: 15
+          # 包含首次运行在内的最大尝试次数
+          max_attempts: 3
+          # 失败后等待的时间：300 秒 = 5 分钟
+          retry_wait_seconds: 300
+          # 要执行的命令
+          command: node ka.js
         env:
           BAS_URL: ${{ secrets[matrix.account.url_secret] }}
           BAS_USERNAME: ${{ secrets[matrix.account.user_secret] }}
           BAS_PASSWORD: ${{ secrets[matrix.account.pass_secret] }}
 
-      #- name: 📤 上传截图作为 Artifacts
-        #if: always() 
-        #uses: actions/upload-artifact@v4
-        #with:
-          #name: bas-status-screenshot-${{ matrix.account.name }}
-          #path: status_screenshot/latest_bas_status.png
-          #retention-days: 7         
-
-      - name: Delete old workflow runs
-        # 仅由第一个 Job执行，防止并发冲突
+      - name: 🗑️ 清理旧的运行记录
+        # 仅由第一个 Job 实例执行，避免 Account 1 和 2 同时操作 API 导致冲突
         if: always() && strategy.job-index == 0
         uses: MajorScruffy/delete-old-workflow-runs@v0.3.0
         env:
@@ -69,6 +81,7 @@ jobs:
 
   keepalive-workflow:
     name: Keepalive Workflow
+    # 确保 Workflow 始终处于活跃状态，不会被 GitHub 自动停掉
     if: always()
     runs-on: ubuntu-latest
     permissions:
