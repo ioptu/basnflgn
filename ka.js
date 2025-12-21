@@ -56,7 +56,7 @@ async function runAutomation() {
     let browser;
     try {
         if (!fs.existsSync(SCREENSHOT_DIR)) fs.mkdirSync(SCREENSHOT_DIR);
-        browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"], headless: true });
+        browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"], headless: true });
         const page = (await browser.pages())[0] || await browser.newPage();
         
         
