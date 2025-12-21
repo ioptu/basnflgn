@@ -52,7 +52,7 @@ jobs:
       - name: ⚙️ 安装 Puppeteer 依赖
         run: npm install
 
-      - name: 💻 运行 BAS 启动脚本 (失败后等 1 分钟重试)
+      - name: 💻 运行 BAS 启动脚本 (失败后等 0.3 分钟重试)
         # 使用 retry 插件实现循环逻辑
         uses: nick-fields/retry@v3
         with:
