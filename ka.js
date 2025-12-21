@@ -108,7 +108,7 @@ async function runAutomation() {
             await page.screenshot({ path: path.join(SCREENSHOT_DIR, "latest_bas_status.png"), fullPage: true });
             console.log(`[${(new Date).toLocaleTimeString()}] 任务完成。`);
         } else {
-            console.error(`[${(new Date).toLocaleTimeString()}] ❌ 报错：经过多轮循环（共计约 8-9 分钟）仍未打开页面。`);
+            console.error(`[${(new Date).toLocaleTimeString()}] ❌ 报错：经过多轮循环仍未打开页面。`);
             await page.screenshot({ path: path.join(SCREENSHOT_DIR, "latest_bas_status.png"), fullPage: true });
             
             throw new Error("PAGE_LOAD_TIMEOUT: 多轮尝试后依然无法打开目标页面");
