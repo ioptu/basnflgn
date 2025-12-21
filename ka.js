@@ -85,7 +85,7 @@ async function runAutomation() {
         console.log(`[${(new Date).toLocaleTimeString()}] 开始检测页面加载状态...`);
         
         let theiaFrame = null;
-        const RETRY_LIMIT = 6; 
+        const RETRY_LIMIT = 10; 
         const TIME_MINUTES = 1 * 60 * 1000; 
 
         
