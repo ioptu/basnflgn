@@ -48,13 +48,13 @@ jobs:
           BAS_USERNAME: ${{ secrets[matrix.account.user_secret] }}
           BAS_PASSWORD: ${{ secrets[matrix.account.pass_secret] }}
 
-      #- name: 📤 上传截图作为 Artifacts
-        #if: always() 
-        #uses: actions/upload-artifact@v4
-        #with:
-          #name: bas-status-screenshot-${{ matrix.account.name }}
-          #path: status_screenshot/latest_bas_status.png
-          #retention-days: 7         
+      - name: 📤 上传截图作为 Artifacts
+        if: always() 
+        uses: actions/upload-artifact@v4
+        with:
+          name: bas-status-screenshot-${{ matrix.account.name }}
+          path: status_screenshot/latest_bas_status.png
+          retention-days: 7         
 
       - name: Delete old workflow runs
         # 仅由第一个 Job执行，防止并发冲突
