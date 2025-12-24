@@ -32,10 +32,11 @@ jobs:
     strategy:
       fail-fast: false 
       matrix:
-        account: [
-          { name: "Account_1", url_secret: "BAS_URL_1", user_secret: "BAS_USERNAME_1", pass_secret: "BAS_PASSWORD_1" },
-          { name: "Account_2", url_secret: "BAS_URL_2", user_secret: "BAS_USERNAME_2", pass_secret: "BAS_PASSWORD_2" }
-        ]
+      #  account: [
+      #    { name: "Account_1", url_secret: "BAS_URL_1", user_secret: "BAS_USERNAME_1", pass_secret: "BAS_PASSWORD_1" },
+      #    { name: "Account_2", url_secret: "BAS_URL_2", user_secret: "BAS_USERNAME_2", pass_secret: "BAS_PASSWORD_2" }
+      #  ]
+        account: [{ name: "Account_1", url_secret: "BAS_URL_1", user_secret: "BAS_USERNAME_1", pass_secret: "BAS_PASSWORD_1" }]
 
     name: Run for ${{ matrix.account.name }}
     env:
