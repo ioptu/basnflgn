@@ -5,7 +5,12 @@ on:
     #- cron: '56 19-23 * * *'
     #- cron: '56 0-13 * * *'
     #- cron: '07 0 * * *'
+    
   workflow_dispatch: # 允许手动点击运行
+
+  repository_dispatch: #允许外部触发
+    types: [bascron]
+  
 
 jobs:
   run_bas_startup:
